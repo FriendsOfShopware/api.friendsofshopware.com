@@ -1,0 +1,19 @@
+{
+  "require": {
+    "php": "^7.3",
+    "ext-curl": "*",
+    "ext-json": "*",
+    "slim/slim": "^4.0",
+    "bryanjhv/slim-session": "~4.0",
+    "php-di/slim-bridge": "^3.0",
+    "php-di/php-di": "^6.0",
+    "doctrine/cache": "^1.8",
+    "slim/psr7": "^0.5.0",
+    "predis/predis": "^1.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "FroshApi\\": "src/"
+    }
+  }
+}
