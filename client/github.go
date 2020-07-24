@@ -2,28 +2,21 @@ package client
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"github.com/google/go-github/v32/github"
 	"golang.org/x/oauth2"
 	"log"
-	"net/http"
 	"os"
 )
 
 var client *github.Client
 var ctx = context.TODO()
 
-func init()  {
+func init() {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
 	)
 	tc := oauth2.NewClient(context.Background(), ts)
-
-	t := tc.Transport.(*oauth2.Transport)
-	t.Base = &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
 
 	client = github.NewClient(tc)
 	ctx = context.Background()
