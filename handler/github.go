@@ -32,7 +32,9 @@ func init() {
 		}
 	}()
 
-	refresh()
+	go func() {
+		refresh()
+	}()
 }
 
 func refresh() {
