@@ -11,14 +11,17 @@ import (
 )
 
 const OrgName = "friendsofshopware"
+
 var OrgCache = make(map[string][]*github.Repository)
 var sortedContributors []*ContributionUser
 
 type ContributionUser struct {
-	User string
+	User          string
+	Name          string
 	Contributions int
-	Commits int
-	AvatarURL string
+	Commits       int
+	PullRequests  int
+	AvatarURL     string
 }
 
 func init() {
@@ -33,12 +36,12 @@ func init() {
 }
 
 func refresh() {
-	log.Println("Refreshing shit")
+	log.Println("Refreshing Github Stats")
 	OrgCache[OrgName] = client.AllRepos(OrgName)
 	GetUserContributions()
 	s := sortedContributors
 	_ = s
-	log.Println("Refreshed shit")
+	log.Println("Refreshed Github Stats")
 }
 
 func getRepositories() []*github.Repository {
@@ -47,6 +50,11 @@ func getRepositories() []*github.Repository {
 		repos = entry
 	} else {
 		repos = client.AllRepos(OrgName)
+
+		sort.Slice(repos, func(a, b int) bool {
+			return repos[a].GetStargazersCount() > repos[b].GetStargazersCount()
+		})
+
 		OrgCache[OrgName] = repos
 	}
 
@@ -67,7 +75,9 @@ func GetUserContributions() []*ContributionUser {
 
 	var totalContributors = make(map[string]*ContributionUser)
 	for _, repo := range repos {
-		contributors, stats := client.GetContributors(*repo.Owner.Login, *repo.Name)
+		contributors, stats := client.GetContributors(repo.Owner.GetLogin(), repo.GetName())
+		prs := client.GetPullRequests(repo.Owner.GetLogin(), repo.GetName())
+
 		for _, c := range contributors {
 			for _, s := range stats {
 				if c.GetLogin() == s.Author.GetLogin() {
@@ -75,8 +85,8 @@ func GetUserContributions() []*ContributionUser {
 					entry, ok := totalContributors[username]
 					if !ok {
 						totalContributors[username] = &ContributionUser{
-							User:          username,
-							AvatarURL:     s.Author.GetAvatarURL(),
+							User:      username,
+							AvatarURL: s.Author.GetAvatarURL(),
 						}
 						entry = totalContributors[username]
 					}
@@ -86,12 +96,25 @@ func GetUserContributions() []*ContributionUser {
 				}
 			}
 		}
+
+		for _, pr := range prs {
+			entry, ok := totalContributors[pr.User.GetLogin()]
+
+			if ok {
+				entry.PullRequests++
+			}
+		}
+	}
+
+	for _, v := range totalContributors {
+		v.Name = client.GetUser(v.User).GetName()
 	}
 
 	sortedContributors = make([]*ContributionUser, 0)
 	for _, v := range totalContributors {
 		sortedContributors = append(sortedContributors, v)
 	}
+
 	sort.Slice(sortedContributors, func(a, b int) bool {
 		return sortedContributors[a].Contributions > sortedContributors[b].Contributions
 	})
@@ -99,7 +122,7 @@ func GetUserContributions() []*ContributionUser {
 	return sortedContributors
 }
 
-func ListContributors(w http.ResponseWriter, _ *http.Request)  {
+func ListContributors(w http.ResponseWriter, _ *http.Request) {
 	if len(sortedContributors) < 1 {
 		GetUserContributions()
 	}

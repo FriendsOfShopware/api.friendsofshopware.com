@@ -24,7 +24,7 @@ func init() {
 
 func AllRepos(organisation string) []*github.Repository {
 	opt := &github.RepositoryListByOrgOptions{
-		ListOptions: github.ListOptions{PerPage: 10},
+		ListOptions: github.ListOptions{PerPage: 100},
 	}
 	// get all pages of results
 	var allRepos []*github.Repository
@@ -55,4 +55,43 @@ func GetContributors(owner, repository string) ([]*github.Contributor, []*github
 		log.Fatal(fmt.Errorf("error while getting contributor stats: %w", err))
 	}
 	return list, stats
+}
+
+func GetUser(login string) *github.User {
+	user, _, err := client.Users.Get(ctx, login)
+
+	if err != nil {
+		log.Fatal(fmt.Errorf("error while getting user: %w", err))
+	}
+
+	return user
+}
+
+func GetPullRequests(owner, repository string) []*github.PullRequest {
+	opt := &github.PullRequestListOptions{
+		State:       "all",
+		ListOptions: github.ListOptions{PerPage: 100},
+	}
+
+	// get all pages of results
+	var allPullRequests []*github.PullRequest
+
+	for {
+		repos, resp, err := client.PullRequests.List(ctx, owner, repository, opt)
+
+		if err != nil {
+			log.Fatal(fmt.Errorf("error while getting all repos: %w", err))
+			return allPullRequests
+		}
+
+		allPullRequests = append(allPullRequests, repos...)
+
+		if resp.NextPage == 0 {
+			break
+		}
+
+		opt.Page = resp.NextPage
+	}
+
+	return allPullRequests
 }
