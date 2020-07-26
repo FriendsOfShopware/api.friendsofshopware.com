@@ -88,9 +88,9 @@ func GetAllRatings(token _struct.Token) _struct.Ratings {
 		req, _ := http.NewRequest("GET", url, nil)
 		req.Header.Set("X-Shopware-Token", token.Token)
 
-		if err != nil {
+		resp, err := client.Do(req)
 
-			resp, err := client.Do(req)
+		if err != nil {
 			log.Fatal(err)
 		}
 
