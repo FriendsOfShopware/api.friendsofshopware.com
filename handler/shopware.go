@@ -2,9 +2,12 @@ package handler
 
 import (
 	"encoding/json"
+	"frosh-api/client/shopware"
 	_struct "frosh-api/client/shopware/struct"
 	"github.com/julienschmidt/httprouter"
+	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -30,15 +33,15 @@ func init() {
 }
 
 func refreshShopware() {
-	//log.Println("Refreshing Shopware API data")
-	//token := shopware.Login(_struct.LoginRequest{
-	//	Email:    os.Getenv("SHOPWARE_USER"),
-	//	Password: os.Getenv("SHOPWARE_PASSWORD"),
-	//})
-	//
-	//SalesCache = shopware.GetAllPluginSales(token)
-	//RatingsCache = shopware.GetAllRatings(token)
-	//log.Println("Refreshed Shopware API data")
+	log.Println("Refreshing Shopware API data")
+	token := shopware.Login(_struct.LoginRequest{
+		Email:    os.Getenv("SHOPWARE_USER"),
+		Password: os.Getenv("SHOPWARE_PASSWORD"),
+	})
+
+	SalesCache = shopware.GetAllPluginSales(token)
+	RatingsCache = shopware.GetAllRatings(token)
+	log.Println("Refreshed Shopware API data")
 }
 
 func ListPluginBuys(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {

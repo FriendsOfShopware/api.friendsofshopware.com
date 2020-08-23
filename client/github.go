@@ -7,6 +7,8 @@ import (
 	"golang.org/x/oauth2"
 	"log"
 	"os"
+	"strings"
+	"time"
 )
 
 var client *github.Client
@@ -61,6 +63,14 @@ func GetContributors(owner, repository string) ([]*github.Contributor, []*github
 
 	stats, _, err := client.Repositories.ListContributorsStats(ctx, owner, repository)
 	if err != nil {
+		errorMsg := fmt.Sprintf("%w", err)
+
+		if strings.Contains(errorMsg, "job scheduled on GitHub side") {
+			fmt.Println("Got job scheduled message error. Waiting some time to wait")
+			time.Sleep(30 * time.Second)
+			return GetContributors(owner, repository)
+		}
+
 		log.Fatal(fmt.Errorf("error while getting contributor stats: %w", err))
 	}
 	return list, stats

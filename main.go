@@ -2,12 +2,21 @@ package main
 
 import (
 	"frosh-api/handler"
+	"github.com/getsentry/sentry-go"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn: os.Getenv("SENTRY_URL"),
+	})
+	if err != nil {
+		log.Fatalf("sentry.Init: %s", err)
+	}
+
 	router := httprouter.New()
 	router.GET("/v2/github/repositories", handler.ListRepositories)
 	router.GET("/v2/github/contributors", handler.ListContributors)
