@@ -35,7 +35,18 @@ func init() {
 	}()
 
 	go func() {
+		for {
+			<-time.NewTicker(5 * time.Minute).C
+			loadRepositoriesIssues()
+		}
+	}()
+
+	go func() {
 		refresh()
+	}()
+
+	go func() {
+		loadRepositoriesIssues()
 	}()
 }
 
@@ -43,7 +54,6 @@ func refresh() {
 	log.Println("Refreshing Github Stats")
 	OrgCache[OrgName] = client.AllRepos(OrgName)
 	GetUserContributions()
-	loadRepositoriesIssues()
 	s := sortedContributors
 	_ = s
 	log.Println("Refreshed Github Stats")

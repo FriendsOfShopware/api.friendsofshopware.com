@@ -15,6 +15,7 @@ func main() {
 	router.GET("/v2/packagist/packages", handler.ListPackages)
 	router.GET("/v2/shopware/sales", handler.ListPluginBuys)
 	router.GET("/v2/shopware/badge/:plugin", handler.GetStoreDownloadBadge)
+	router.POST("/webhook/issue", handler.GithubIssueWebhook)
 	router.GET("/", handler.ListPluginBuys)
 
 	log.Println("Go!")

@@ -24,6 +24,7 @@ func init() {
 
 func AllRepos(organisation string) []*github.Repository {
 	opt := &github.RepositoryListByOrgOptions{
+		Type:        "public",
 		ListOptions: github.ListOptions{PerPage: 100},
 	}
 	// get all pages of results
@@ -34,7 +35,15 @@ func AllRepos(organisation string) []*github.Repository {
 			log.Fatal(fmt.Errorf("error while getting all repos: %w", err))
 			return nil
 		}
-		allRepos = append(allRepos, repos...)
+
+		for _, repo := range repos {
+			if repo.GetArchived() {
+				continue
+			}
+
+			allRepos = append(allRepos, repo)
+		}
+
 		if resp.NextPage == 0 {
 			break
 		}
