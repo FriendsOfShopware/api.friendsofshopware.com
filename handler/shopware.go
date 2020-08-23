@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"frosh-api/client/shopware"
 	_struct "frosh-api/client/shopware/struct"
+	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"os"
@@ -43,7 +44,7 @@ func refreshShopware() {
 	log.Println("Refreshed Shopware API data")
 }
 
-func ListPluginBuys(w http.ResponseWriter, _ *http.Request) {
+func ListPluginBuys(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
 	var saleList ListSales
 	saleList.Plugins = make(map[string]int)
 	saleList.Total = len(SalesCache)

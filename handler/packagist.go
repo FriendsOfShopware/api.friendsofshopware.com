@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"frosh-api/client"
+	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"time"
 )
@@ -22,7 +23,7 @@ func init() {
 	}()
 }
 
-func ListPackages(w http.ResponseWriter, _ *http.Request) {
+func ListPackages(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
 	jData, err := json.Marshal(PackagesCache)
 	if err != nil {
 	}

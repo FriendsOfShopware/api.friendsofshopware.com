@@ -95,3 +95,31 @@ func GetPullRequests(owner, repository string) []*github.PullRequest {
 
 	return allPullRequests
 }
+
+func GetAllIssues(owner, repository string) []*github.Issue {
+	opt := &github.IssueListByRepoOptions{
+		State:       "open",
+		ListOptions: github.ListOptions{PerPage: 100},
+	}
+
+	var allIssues []*github.Issue
+
+	for {
+		issues, resp, err := client.Issues.ListByRepo(ctx, owner, repository, opt)
+
+		if err != nil {
+			log.Fatal(fmt.Errorf("error while getting all issues: %w", err))
+			return allIssues
+		}
+
+		allIssues = append(allIssues, issues...)
+
+		if resp.NextPage == 0 {
+			break
+		}
+
+		opt.Page = resp.NextPage
+	}
+
+	return allIssues
+}

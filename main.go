@@ -2,19 +2,21 @@ package main
 
 import (
 	"frosh-api/handler"
+	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 )
 
 func main() {
-	http.HandleFunc("/v2/github/repositories", handler.ListRepositories)
-	http.HandleFunc("/v2/github/contributors", handler.ListContributors)
-	http.HandleFunc("/v2/packagist/packages", handler.ListPackages)
-	http.HandleFunc("/v2/shopware/sales", handler.ListPluginBuys)
-	http.HandleFunc("/v2/shopware/badge", handler.GetStoreDownloadBadge)
-	//http.HandleFunc("/", handler.ListPluginBuys)
-	//http.HandleFunc("/v2/shopware/ratings", handler.ListPluginRatings)
+	router := httprouter.New()
+	router.GET("/v2/github/repositories", handler.ListRepositories)
+	router.GET("/v2/github/contributors", handler.ListContributors)
+	router.GET("/v2/github/issues/:plugin", handler.ListRepositoryIssues)
+	router.GET("/v2/packagist/packages", handler.ListPackages)
+	router.GET("/v2/shopware/sales", handler.ListPluginBuys)
+	router.GET("/v2/shopware/badge/:plugin", handler.GetStoreDownloadBadge)
+	router.GET("/", handler.ListPluginBuys)
 
 	log.Println("Go!")
-	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", router))
 }

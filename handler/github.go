@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"frosh-api/client"
 	"github.com/google/go-github/v32/github"
+	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"sort"
@@ -14,6 +15,7 @@ const OrgName = "friendsofshopware"
 
 var OrgCache = make(map[string][]*github.Repository)
 var sortedContributors []*ContributionUser
+var IssueCache = make(map[string][]*github.Issue)
 
 type ContributionUser struct {
 	User          string
@@ -41,6 +43,7 @@ func refresh() {
 	log.Println("Refreshing Github Stats")
 	OrgCache[OrgName] = client.AllRepos(OrgName)
 	GetUserContributions()
+	loadRepositoriesIssues()
 	s := sortedContributors
 	_ = s
 	log.Println("Refreshed Github Stats")
@@ -63,7 +66,7 @@ func getRepositories() []*github.Repository {
 	return repos
 }
 
-func ListRepositories(w http.ResponseWriter, _ *http.Request) {
+func ListRepositories(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
 	jData, err := json.Marshal(getRepositories())
 	if err != nil {
 	}
@@ -124,13 +127,37 @@ func GetUserContributions() []*ContributionUser {
 	return sortedContributors
 }
 
-func ListContributors(w http.ResponseWriter, _ *http.Request) {
+func ListContributors(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
 	if len(sortedContributors) < 1 {
 		GetUserContributions()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	jData, err := json.Marshal(sortedContributors)
+	if err != nil {
+	}
+
+	w.Write(jData)
+}
+
+func loadRepositoriesIssues() {
+	repos := getRepositories()
+
+	for _, repo := range repos {
+		IssueCache[repo.GetName()] = client.GetAllIssues(repo.Owner.GetLogin(), repo.GetName())
+	}
+}
+
+func ListRepositoryIssues(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	issues, ok := IssueCache[ps.ByName("plugin")]
+
+	if !ok {
+		w.WriteHeader(404)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	jData, err := json.Marshal(issues)
 	if err != nil {
 	}
 
