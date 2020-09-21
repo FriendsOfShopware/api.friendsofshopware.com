@@ -1,18 +1,12 @@
-FROM alpine as ssl
+FROM golang:1.15 as build-env
 
-RUN apk update && apk add --no-cache ca-certificates && update-ca-certificates
+WORKDIR /go/src/app
+ADD . /go/src/app
 
-FROM golang as builder
+RUN go get -d -v ./...
 
-ENV CGO_ENABLED=0
-COPY . /app
-WORKDIR /app
-RUN go build -x -ldflags="-s -w -v -linkmode=internal -extldflags='-static'"
+RUN go build -o /go/bin/app
 
-FROM scratch
-
-COPY --from=builder /app/frosh-api /
-COPY --from=ssl /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-EXPOSE 8080
-
-CMD ["/frosh-api"]
+FROM gcr.io/distroless/base
+COPY --from=build-env /go/bin/app /
+CMD ["/app"]
