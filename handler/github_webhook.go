@@ -3,9 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"frosh-api/client"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
+
+	"github.com/julienschmidt/httprouter"
+
+	githubClient "frosh-api/internal/github"
 )
 
 type Webhook struct {
@@ -20,12 +22,12 @@ type Webhook struct {
 
 func GithubIssueWebhook(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	var d Webhook
-	err := json.NewDecoder(r.Body).Decode(&d)
-	if err != nil {
-		// handle error
+	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
-	IssueCache[d.Repository.Name] = client.GetAllIssues(d.Repository.Owner.Login, d.Repository.Name)
+	IssueCache[d.Repository.Name] = githubClient.GetAllIssues(d.Repository.Owner.Login, d.Repository.Name)
 	fmt.Printf("Updated issues for %s", d.Repository.Name)
 
 	w.WriteHeader(200)

@@ -2,13 +2,15 @@ package handler
 
 import (
 	"encoding/json"
-	"frosh-api/client"
-	"github.com/google/go-github/v32/github"
-	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"sort"
 	"time"
+
+	"github.com/google/go-github/v32/github"
+	"github.com/julienschmidt/httprouter"
+
+	githubClient "frosh-api/internal/github"
 )
 
 const OrgName = "friendsofshopware"
@@ -29,30 +31,22 @@ type ContributionUser struct {
 func init() {
 	go func() {
 		for {
-			<-time.NewTicker(time.Hour).C
 			refresh()
+			time.Sleep(time.Hour)
 		}
 	}()
 
 	go func() {
 		for {
-			<-time.NewTicker(5 * time.Minute).C
 			loadRepositoriesIssues()
+			time.Sleep(5 * time.Minute)
 		}
-	}()
-
-	go func() {
-		refresh()
-	}()
-
-	go func() {
-		loadRepositoriesIssues()
 	}()
 }
 
 func refresh() {
 	log.Println("Refreshing Github Stats")
-	OrgCache[OrgName] = client.AllRepos(OrgName)
+	OrgCache[OrgName] = githubClient.AllRepos(OrgName)
 	GetUserContributions()
 	s := sortedContributors
 	_ = s
@@ -64,7 +58,7 @@ func getRepositories() []*github.Repository {
 	if entry, ok := OrgCache[OrgName]; ok {
 		repos = entry
 	} else {
-		repos = client.AllRepos(OrgName)
+		repos = githubClient.AllRepos(OrgName)
 
 		sort.Slice(repos, func(a, b int) bool {
 			return repos[a].GetStargazersCount() > repos[b].GetStargazersCount()
@@ -82,7 +76,7 @@ func ListRepositories(w http.ResponseWriter, _ *http.Request, ps httprouter.Para
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(jData)
+	_, _ = w.Write(jData)
 }
 
 func GetUserContributions() []*ContributionUser {
@@ -90,8 +84,8 @@ func GetUserContributions() []*ContributionUser {
 
 	var totalContributors = make(map[string]*ContributionUser)
 	for _, repo := range repos {
-		contributors, stats := client.GetContributors(repo.Owner.GetLogin(), repo.GetName())
-		prs := client.GetPullRequests(repo.Owner.GetLogin(), repo.GetName())
+		contributors, stats := githubClient.GetContributors(repo.Owner.GetLogin(), repo.GetName())
+		prs := githubClient.GetPullRequests(repo.Owner.GetLogin(), repo.GetName())
 
 		for _, c := range contributors {
 			for _, s := range stats {
@@ -122,7 +116,7 @@ func GetUserContributions() []*ContributionUser {
 	}
 
 	for _, v := range totalContributors {
-		v.Name = client.GetUser(v.User).GetName()
+		v.Name = githubClient.GetUser(v.User).GetName()
 	}
 
 	sortedContributors = make([]*ContributionUser, 0)
@@ -147,14 +141,14 @@ func ListContributors(w http.ResponseWriter, _ *http.Request, ps httprouter.Para
 	if err != nil {
 	}
 
-	w.Write(jData)
+	_, _ = w.Write(jData)
 }
 
 func loadRepositoriesIssues() {
 	repos := getRepositories()
 
 	for _, repo := range repos {
-		IssueCache[repo.GetName()] = client.GetAllIssues(repo.Owner.GetLogin(), repo.GetName())
+		IssueCache[repo.GetName()] = githubClient.GetAllIssues(repo.Owner.GetLogin(), repo.GetName())
 	}
 }
 
@@ -171,5 +165,5 @@ func ListRepositoryIssues(w http.ResponseWriter, _ *http.Request, ps httprouter.
 	if err != nil {
 	}
 
-	w.Write(jData)
+	_, _ = w.Write(jData)
 }

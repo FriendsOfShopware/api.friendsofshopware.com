@@ -2,32 +2,32 @@ package handler
 
 import (
 	"encoding/json"
-	"frosh-api/client"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
+
+	"frosh-api/internal/packagist"
 )
 
-var PackagesCache = make(map[string]*client.PackageStatistics)
+var PackagesCache = make(map[string]*packagist.PackageStatistics)
 
 func init() {
 	go func() {
 		for {
-			<-time.NewTicker(time.Hour).C
-			PackagesCache = client.GetPackageStatistics()
+			PackagesCache = packagist.GetPackageStatistics()
+			time.Sleep(time.Hour)
 		}
-	}()
-
-	go func() {
-		PackagesCache = client.GetPackageStatistics()
 	}()
 }
 
 func ListPackages(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
 	jData, err := json.Marshal(PackagesCache)
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(jData)
+	_, _ = w.Write(jData)
 }

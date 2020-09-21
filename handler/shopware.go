@@ -2,17 +2,18 @@ package handler
 
 import (
 	"encoding/json"
-	"frosh-api/client/shopware"
-	_struct "frosh-api/client/shopware/struct"
-	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
+
+	"frosh-api/internal/shopware"
 )
 
-var SalesCache _struct.Sales
-var RatingsCache _struct.Ratings
+var SalesCache shopware.Sales
+var RatingsCache shopware.Ratings
 
 type ListSales struct {
 	Total   int            `json:"all"`
@@ -22,25 +23,37 @@ type ListSales struct {
 func init() {
 	go func() {
 		for {
-			<-time.NewTicker(time.Hour).C
 			refreshShopware()
+			time.Sleep(time.Hour)
 		}
-	}()
-
-	go func() {
-		refreshShopware()
 	}()
 }
 
 func refreshShopware() {
 	log.Println("Refreshing Shopware API data")
-	token := shopware.Login(_struct.LoginRequest{
+	token, err := shopware.Login(&shopware.LoginRequest{
 		Email:    os.Getenv("SHOPWARE_USER"),
 		Password: os.Getenv("SHOPWARE_PASSWORD"),
 	})
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
-	SalesCache = shopware.GetAllPluginSales(token)
-	RatingsCache = shopware.GetAllRatings(token)
+	sales, err := shopware.GetAllPluginSales(token)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	SalesCache = sales
+
+	ratings, err := shopware.GetAllRatings(token)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	RatingsCache = ratings
+
 	log.Println("Refreshed Shopware API data")
 }
 
@@ -50,25 +63,17 @@ func ListPluginBuys(w http.ResponseWriter, _ *http.Request, ps httprouter.Params
 	saleList.Total = len(SalesCache)
 
 	for _, s := range SalesCache {
-		_, ok := saleList.Plugins[s.Plugin.Name]
+		name := s.Plugin.Name
 
-		if !ok {
-			saleList.Plugins[s.Plugin.Name] = 0
+		if _, ok := saleList.Plugins[name]; !ok {
+			saleList.Plugins[name] = 0
 		}
-		saleList.Plugins[s.Plugin.Name]++
+		saleList.Plugins[name]++
 	}
 
 	jData, err := json.Marshal(saleList)
 	if err != nil {
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jData)
-}
-
-func ListPluginRatings(w http.ResponseWriter, _ *http.Request) {
-	jData, err := json.Marshal(RatingsCache)
-	if err != nil {
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")

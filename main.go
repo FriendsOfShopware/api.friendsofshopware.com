@@ -1,12 +1,14 @@
 package main
 
 import (
-	"frosh-api/handler"
-	"github.com/getsentry/sentry-go"
-	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/julienschmidt/httprouter"
+
+	"frosh-api/handler"
 )
 
 func main() {

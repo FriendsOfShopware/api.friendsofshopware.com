@@ -1,10 +1,11 @@
 package handler
 
 import (
-	"github.com/julienschmidt/httprouter"
-	"github.com/narqo/go-badge"
 	"net/http"
 	"strconv"
+
+	"github.com/julienschmidt/httprouter"
+	"github.com/narqo/go-badge"
 )
 
 func GetStoreDownloadBadge(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -26,9 +27,12 @@ func GetStoreDownloadBadge(w http.ResponseWriter, r *http.Request, ps httprouter
 		return
 	}
 
+	data, err := badge.RenderBytes("Store Downloads", strconv.Itoa(pluginDownloadList[ps.ByName("plugin")])+" Downloads", "#189eff")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "image/svg+xml;charset=utf-8")
-
-	badge, _ := badge.RenderBytes("Store Downloads", strconv.Itoa(pluginDownloadList[ps.ByName("plugin")])+" Downloads", "#189eff")
-
-	w.Write(badge)
+	_, _ = w.Write(data)
 }

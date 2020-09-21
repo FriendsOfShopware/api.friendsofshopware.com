@@ -1,28 +1,25 @@
-package client
+package github
 
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/google/go-github/v32/github"
 	"golang.org/x/oauth2"
-	"log"
-	"os"
-	"strings"
-	"time"
 )
 
-var client *github.Client
-var ctx = context.TODO()
-
-func init() {
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
-	)
-	tc := oauth2.NewClient(context.Background(), ts)
-
-	client = github.NewClient(tc)
-	ctx = context.Background()
-}
+var client = github.NewClient(
+	oauth2.NewClient(
+		context.Background(),
+		oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
+		),
+	),
+)
 
 func AllRepos(organisation string) []*github.Repository {
 	opt := &github.RepositoryListByOrgOptions{
@@ -32,9 +29,9 @@ func AllRepos(organisation string) []*github.Repository {
 	// get all pages of results
 	var allRepos []*github.Repository
 	for {
-		repos, resp, err := client.Repositories.ListByOrg(ctx, organisation, opt)
+		repos, resp, err := client.Repositories.ListByOrg(context.TODO(), organisation, opt)
 		if err != nil {
-			log.Fatal(fmt.Errorf("error while getting all repos: %w", err))
+			log.Println(fmt.Errorf("error while getting all repos: %w", err))
 			return nil
 		}
 
@@ -56,31 +53,37 @@ func AllRepos(organisation string) []*github.Repository {
 }
 
 func GetContributors(owner, repository string) ([]*github.Contributor, []*github.ContributorStats) {
-	list, _, err := client.Repositories.ListContributors(ctx, owner, repository, nil)
+	list, _, err := client.Repositories.ListContributors(context.TODO(), owner, repository, nil)
 	if err != nil {
-		log.Fatal(fmt.Errorf("error while getting contributors: %w", err))
+		log.Println(fmt.Errorf("error while getting contributors: %w", err))
+		return nil, nil
 	}
 
-	stats, _, err := client.Repositories.ListContributorsStats(ctx, owner, repository)
-	if err != nil {
-		errorMsg := fmt.Sprintf("%w", err)
+	stats, resp, err := client.Repositories.ListContributorsStats(context.TODO(), owner, repository)
+	if err != nil || resp == nil {
+		log.Println(fmt.Errorf("error while getting contributor stats: %w", err))
+		return nil, nil
+	}
 
-		if strings.Contains(errorMsg, "job scheduled on GitHub side") {
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusAccepted {
 			fmt.Println("Got job scheduled message error. Waiting some time to wait")
-			time.Sleep(30 * time.Second)
+			time.Sleep(1 * time.Minute)
 			return GetContributors(owner, repository)
 		}
 
-		log.Fatal(fmt.Errorf("error while getting contributor stats: %w", err))
+		log.Println(fmt.Errorf("error while getting contributor stats: %w", err))
+		return nil, nil
 	}
+
 	return list, stats
 }
 
 func GetUser(login string) *github.User {
-	user, _, err := client.Users.Get(ctx, login)
-
+	user, _, err := client.Users.Get(context.TODO(), login)
 	if err != nil {
-		log.Fatal(fmt.Errorf("error while getting user: %w", err))
+		log.Println(fmt.Errorf("error while getting user: %w", err))
+		return nil
 	}
 
 	return user
@@ -96,10 +99,10 @@ func GetPullRequests(owner, repository string) []*github.PullRequest {
 	var allPullRequests []*github.PullRequest
 
 	for {
-		repos, resp, err := client.PullRequests.List(ctx, owner, repository, opt)
+		repos, resp, err := client.PullRequests.List(context.TODO(), owner, repository, opt)
 
 		if err != nil {
-			log.Fatal(fmt.Errorf("error while getting all repos: %w", err))
+			log.Println(fmt.Errorf("error while getting all repos: %w", err))
 			return allPullRequests
 		}
 
@@ -124,10 +127,10 @@ func GetAllIssues(owner, repository string) []*github.Issue {
 	var allIssues []*github.Issue
 
 	for {
-		issues, resp, err := client.Issues.ListByRepo(ctx, owner, repository, opt)
+		issues, resp, err := client.Issues.ListByRepo(context.TODO(), owner, repository, opt)
 
 		if err != nil {
-			log.Fatal(fmt.Errorf("error while getting all issues: %w", err))
+			log.Println(fmt.Errorf("error while getting all issues: %w", err))
 			return allIssues
 		}
 
