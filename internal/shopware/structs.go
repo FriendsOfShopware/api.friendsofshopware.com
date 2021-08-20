@@ -31,7 +31,10 @@ type Rating struct {
 		ID    int `json:"id"`
 		Value int `json:"value"`
 	} `json:"documentation"`
-	Support interface{}   `json:"support"`
+	Support struct {
+		ID    int `json:"id"`
+		Value int `json:"value"`
+	} `json:"support"`
 	Replies []interface{} `json:"replies"`
 	History []interface{} `json:"history"`
 	Plugin  struct {
@@ -43,15 +46,23 @@ type Rating struct {
 				ID   int    `json:"id"`
 				Name string `json:"name"`
 			} `json:"locale"`
-			Name               string        `json:"name"`
-			Description        string        `json:"description"`
-			InstallationManual string        `json:"installationManual"`
-			ShortDescription   string        `json:"shortDescription"`
-			Highlights         string        `json:"highlights"`
-			Features           string        `json:"features"`
-			Tags               []interface{} `json:"tags"`
-			Videos             []interface{} `json:"videos"`
-			Faqs               []interface{} `json:"faqs"`
+			Name               string `json:"name"`
+			Description        string `json:"description"`
+			InstallationManual string `json:"installationManual"`
+			ShortDescription   string `json:"shortDescription"`
+			Highlights         string `json:"highlights"`
+			Features           string `json:"features"`
+			Tags               []struct {
+				ID     int `json:"id"`
+				Locale struct {
+					ID   int    `json:"id"`
+					Name string `json:"name"`
+				} `json:"locale"`
+				Name     string `json:"name"`
+				Internal bool   `json:"internal"`
+			} `json:"tags"`
+			Videos []interface{} `json:"videos"`
+			Faqs   []interface{} `json:"faqs"`
 		} `json:"infos"`
 		Support               bool `json:"support"`
 		SupportOnlyCommercial bool `json:"supportOnlyCommercial"`
@@ -94,12 +105,15 @@ type Sale struct {
 			Description string `json:"description"`
 		} `json:"generation"`
 	} `json:"plugin"`
-	ExpirationDate interface{} `json:"expirationDate"`
-	Charging       struct {
+	ID                 int  `json:"id"`
+	TimesExtended      int  `json:"timesExtended"`
+	TrialPhaseIncluded bool `json:"trialPhaseIncluded"`
+	Charging           struct {
 		LastBookingDate interface{} `json:"lastBookingDate"`
 		NextBookingDate interface{} `json:"nextBookingDate"`
 	} `json:"charging"`
-	Subscription struct {
+	ExpirationDate interface{} `json:"expirationDate"`
+	Subscription   struct {
 		CreationDate   interface{} `json:"creationDate"`
 		ExpirationDate interface{} `json:"expirationDate"`
 	} `json:"subscription"`
