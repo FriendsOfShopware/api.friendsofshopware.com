@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -29,6 +30,12 @@ func main() {
 	router.POST("/webhook/issue", handler.GithubIssueWebhook)
 	router.GET("/", handler.ListPluginBuys)
 
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "8080"
+	}
+
 	log.Println("Go!")
-	log.Fatal(http.ListenAndServe("0.0.0.0:8080", router))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("0.0.0.0:%s", port), router))
 }
