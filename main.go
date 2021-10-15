@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/julienschmidt/httprouter"
+	"github.com/rs/cors"
 
 	"frosh-api/handler"
 )
@@ -36,6 +37,9 @@ func main() {
 		port = "8080"
 	}
 
+	// Insert the middleware
+	handler := cors.Default().Handler(router)
+
 	log.Println("Go!")
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("0.0.0.0:%s", port), router))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("0.0.0.0:%s", port), handler))
 }
