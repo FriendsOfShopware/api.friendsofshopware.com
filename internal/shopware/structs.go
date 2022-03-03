@@ -81,13 +81,6 @@ type Sale struct {
 	CreationDate string `json:"creationDate"`
 	OrderNumber  string `json:"orderNumber"`
 	Price        int    `json:"price"`
-	LicenseShop  struct {
-		Company struct {
-			CustomerNumber string `json:"customerNumber"`
-			Name           string `json:"name"`
-		} `json:"company"`
-		Domain string `json:"domain"`
-	} `json:"licenseShop"`
 	Plugin struct {
 		ID    int    `json:"id"`
 		Name  string `json:"name"`
