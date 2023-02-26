@@ -10,5 +10,5 @@ require (
 	github.com/narqo/go-badge v0.0.0-20190124110329-d9415e4e1e9f
 	github.com/rs/cors v1.8.3
 	golang.org/x/image v0.0.0-20200618115811-c13761719519 // indirect
-	golang.org/x/oauth2 v0.0.0-20210402161424-2e8d93401602
+	golang.org/x/oauth2 v0.5.0
 )
