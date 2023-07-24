@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -70,6 +71,8 @@ func GetAllPluginSales(token *Token) (Sales, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		log.Printf("Loading Shopware sales with offset: %d\n", offset)
 
 		for _, s := range sales {
 			allSales = append(allSales, s)

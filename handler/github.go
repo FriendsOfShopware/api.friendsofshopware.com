@@ -2,13 +2,12 @@ package handler
 
 import (
 	"encoding/json"
+	"github.com/google/go-github/v53/github"
+	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"sort"
 	"time"
-
-	"github.com/google/go-github/v32/github"
-	"github.com/julienschmidt/httprouter"
 
 	githubClient "frosh-api/internal/github"
 )

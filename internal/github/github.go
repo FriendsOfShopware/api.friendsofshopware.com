@@ -6,9 +6,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
-	"github.com/google/go-github/v32/github"
+	"github.com/google/go-github/v53/github"
 	"golang.org/x/oauth2"
 )
 
@@ -66,7 +67,7 @@ func GetContributors(owner, repository string) ([]*github.Contributor, []*github
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == http.StatusAccepted {
+		if resp.StatusCode == http.StatusAccepted || strings.Contains(err.Error(), "job scheduled on GitHub side") {
 			fmt.Println("Got job scheduled message error. Waiting some time to wait")
 			time.Sleep(1 * time.Minute)
 			return GetContributors(owner, repository)
