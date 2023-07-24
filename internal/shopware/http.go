@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -23,7 +23,7 @@ func Login(request *LoginRequest) (*Token, error) {
 
 	defer resp.Body.Close()
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("login: %v", err)
 	}
@@ -50,7 +50,7 @@ func GetAllPluginSales(token *Token) (Sales, error) {
 			return nil, fmt.Errorf("getAllPluginSales: %v", err)
 		}
 
-		data, err := ioutil.ReadAll(resp.Body)
+		data, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("getAllPluginSales: %v", err)
 		}
@@ -99,7 +99,7 @@ func GetAllRatings(token *Token) (Ratings, error) {
 			return nil, fmt.Errorf("getAllPluginSales: %v", err)
 		}
 
-		data, err := ioutil.ReadAll(resp.Body)
+		data, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("getAllPluginSales: %v", err)
 		}
