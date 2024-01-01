@@ -1,12 +1,13 @@
-FROM golang:1.20 as build-env
+FROM --platform=$BUILDPLATFORM golang:alpine AS builder
+ADD . /app
+WORKDIR /app
+ARG TARGETOS
+ARG TARGETARCH
 
-WORKDIR /go/src/app
-ADD . /go/src/app
-
-RUN go get -d -v ./...
-
-RUN CGO_ENABLED=0 go build -o /go/bin/app
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -ldflags "-s -w" -trimpath -o /usr/local/bin/frosh-api
 
 FROM gcr.io/distroless/base
-COPY --from=build-env /go/bin/app /bin/frosh-api
-CMD ["/bin/frosh-api"]
+
+COPY --from=builder /usr/local/bin/frosh-api /usr/local/bin/frosh-api
+
+ENTRYPOINT ["/usr/local/bin/supervisord"]
