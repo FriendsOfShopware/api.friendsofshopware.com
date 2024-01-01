@@ -10,4 +10,4 @@ FROM gcr.io/distroless/base
 
 COPY --from=builder /usr/local/bin/frosh-api /usr/local/bin/frosh-api
 
-ENTRYPOINT ["/usr/local/bin/supervisord"]
+ENTRYPOINT ["/usr/local/bin/frosh-api"]
