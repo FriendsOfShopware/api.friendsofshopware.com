@@ -1,0 +1,14 @@
+name = "frosh-api"
+main = "src/index.ts"
+compatibility_date = "2023-08-01"
+
+kv_namespaces = [
+  { binding = "STORAGE", id = "your-kv-namespace-id", preview_id = "your-preview-kv-namespace-id" }
+]
+
+[vars]
+GITHUB_TOKEN = ""
+ORG_NAME = "friendsofshopware"
+
+[triggers]
+crons = ["0 * * * *", "*/5 * * * *"] 

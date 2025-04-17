@@ -1,1 +1,29 @@
-/.idea
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Cloudflare Workers
+dist/
+worker/
+.wrangler/
+
+# TypeScript
+*.tsbuildinfo
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables
+.env
+.dev.vars
+
+# System Files
+.DS_Store
+Thumbs.db
