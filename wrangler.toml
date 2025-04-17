@@ -1,13 +1,27 @@
 name = "frosh-api"
 main = "src/index.ts"
 compatibility_date = "2023-08-01"
+workers_dev = false
 
-kv_namespaces = [
-  { binding = "STORAGE", id = "your-kv-namespace-id", preview_id = "your-preview-kv-namespace-id" }
+routes = [
+  "api.friendsofshopware.com/*"
 ]
 
+kv_namespaces = [
+  { binding = "STORAGE", id = "6aaf2e17488841168a1ad91cf8c4a91b", preview_id = "6aaf2e17488841168a1ad91cf8c4a91b" }
+]
+
+[[queues.producers]]
+queue = "frosh-api-github-tasks"
+binding = "GITHUB_QUEUE"
+
+[[queues.consumers]]
+queue = "frosh-api-github-tasks"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+
 [vars]
-GITHUB_TOKEN = ""
 ORG_NAME = "friendsofshopware"
 
 [triggers]

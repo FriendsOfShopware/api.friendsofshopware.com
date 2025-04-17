@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { Octokit } from '@octokit/rest';
-import { Env, AppContext } from './types';
+import { Env, AppContext, GitHubTaskMessage, MessageBatch } from './types';
 import {
   listRepositories,
   listContributors,
@@ -12,6 +12,7 @@ import {
   refreshRepositoryIssues,
   refreshPackagistStats
 } from './handlers';
+import { processGitHubTasks } from './queue';
 
 // Define app with bindings
 const app = new Hono<{ Bindings: Env }>();
@@ -48,8 +49,16 @@ interface ScheduledController {
 export default {
   fetch: app.fetch,
   
+  // Queue handler - must be declared as a function, not an object
+  async queue(batch: MessageBatch<GitHubTaskMessage>, env: Env, ctx: ExecutionContext) {
+    // Get the queue name from the batch
+    if (batch.queue === 'github-tasks') {
+      await processGitHubTasks(batch, env);
+    }
+  },
+  
   // Handle scheduled events
-  scheduled: async (controller: ScheduledController, env: Env, ctx: ExecutionContext) => {
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
     // Create context for scheduled handlers
     const context: AppContext = {
       env,
@@ -60,13 +69,14 @@ export default {
 
     // Determine which refresh operation to perform based on cron schedule
     if (controller.cron === '0 * * * *') {
-      console.log('Refreshing Github Stats');
+      console.log('Starting Github Stats hourly job');
       // Hourly jobs
-      ctx.waitUntil(refreshGithubStats(context));
-      ctx.waitUntil(refreshPackagistStats(context));
+      await refreshGithubStats(context);
+      await refreshPackagistStats(context);
     } else if (controller.cron === '*/5 * * * *') {
+      console.log('Starting Repository Issues 5-minute job');
       // Every 5 minutes
-      ctx.waitUntil(refreshRepositoryIssues(context));
+      await refreshRepositoryIssues(context);
     }
   }
 }; 

@@ -2,7 +2,7 @@ import { Context } from 'hono';
 import { GitHubService } from './services/github';
 import { PackagistService } from './services/packagist';
 import { CacheService } from './services/cache';
-import { AppContext, Env, GithubWebhook } from './types';
+import { AppContext, Env, GithubWebhook, GitHubTaskMessage } from './types';
 
 // Main Routes Handler
 export const listRepositories = async (c: Context<{ Bindings: Env }>) => {
@@ -40,19 +40,16 @@ export const githubIssueWebhook = async (c: Context<{ Bindings: Env }>) => {
     const payload: GithubWebhook = await c.req.json();
     const repoName = payload.repository.name;
     const ownerLogin = payload.repository.owner.login;
+
+    // Send a message to the queue to update issues
+    await c.env.GITHUB_QUEUE.send({
+      type: 'fetch-repository-issues',
+      owner: ownerLogin,
+      repo: repoName,
+      timestamp: Date.now()
+    } as GitHubTaskMessage);
     
-    const appContext: AppContext = {
-      env: c.env,
-      octokit: c.env.octokit!
-    };
-    
-    const githubService = new GitHubService(appContext);
-    const cacheService = new CacheService(c.env);
-    
-    const issues = await githubService.getAllIssues(ownerLogin, repoName);
-    await cacheService.updateIssuesForRepository(repoName, issues);
-    
-    return c.text(`Updated issues for ${repoName}`, 200);
+    return c.text(`Queued update for issues of ${repoName}`, 200);
   } catch (error) {
     console.error('Error processing webhook:', error);
     return c.text('Error processing webhook', 500);
@@ -61,7 +58,7 @@ export const githubIssueWebhook = async (c: Context<{ Bindings: Env }>) => {
 
 // Background refreshers
 export const refreshGithubStats = async (context: AppContext) => {
-  console.log('Refreshing Github Stats');
+  console.log('Fetching repositories and queueing GitHub stats tasks');
   const githubService = new GitHubService(context);
   const cacheService = new CacheService(context.env);
   
@@ -70,27 +67,58 @@ export const refreshGithubStats = async (context: AppContext) => {
   const repos = await githubService.getAllRepos(orgName);
   await cacheService.setRepositories(repos);
   
-  // Get and cache contributors
-  const contributors = await githubService.getUserContributions(repos);
-  await cacheService.setContributors(contributors);
+  // Queue contributor and PR tasks for each repository
+  for (const repo of repos) {
+    // Queue contributors fetch
+    await context.env.GITHUB_QUEUE.send({
+      type: 'fetch-repository-contributors',
+      owner: repo.owner.login,
+      repo: repo.name,
+      timestamp: Date.now()
+    } as GitHubTaskMessage);
+    
+    // Queue pull requests fetch
+    await context.env.GITHUB_QUEUE.send({
+      type: 'fetch-repository-pull-requests',
+      owner: repo.owner.login,
+      repo: repo.name,
+      timestamp: Date.now()
+    } as GitHubTaskMessage);
+  }
   
-  console.log('Refreshed Github Stats');
+  // Queue a task to process all contributor data after the individual tasks
+  // We'll send this separately without a delay since Cloudflare Workers queues
+  // will process messages in roughly the order they were received
+  await context.env.GITHUB_QUEUE.send({
+    type: 'process-contributors',
+    owner: orgName,
+    timestamp: Date.now(),
+    metadata: {
+      // Add a higher priority flag that we can check in the consumer
+      highPriority: false
+    }
+  } as GitHubTaskMessage);
+  
+  console.log('Queued GitHub stats tasks for all repositories');
 };
 
 export const refreshRepositoryIssues = async (context: AppContext) => {
-  console.log('Refreshing Repository Issues');
-  const githubService = new GitHubService(context);
+  console.log('Queueing Repository Issues refresh tasks');
   const cacheService = new CacheService(context.env);
   
   const repos = await cacheService.getRepositories();
-  const issues: Record<string, any[]> = {};
   
+  // Queue issue fetching for each repository
   for (const repo of repos) {
-    issues[repo.name] = await githubService.getAllIssues(repo.owner.login, repo.name);
+    await context.env.GITHUB_QUEUE.send({
+      type: 'fetch-repository-issues',
+      owner: repo.owner.login,
+      repo: repo.name,
+      timestamp: Date.now()
+    } as GitHubTaskMessage);
   }
   
-  await cacheService.setIssues(issues);
-  console.log('Refreshed Repository Issues');
+  console.log('Queued Repository Issues tasks');
 };
 
 export const refreshPackagistStats = async (context: AppContext) => {
