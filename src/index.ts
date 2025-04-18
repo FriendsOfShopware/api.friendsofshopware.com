@@ -51,10 +51,7 @@ export default {
   
   // Queue handler - must be declared as a function, not an object
   async queue(batch: MessageBatch<GitHubTaskMessage>, env: Env, ctx: ExecutionContext) {
-    // Get the queue name from the batch
-    if (batch.queue === 'github-tasks') {
-      await processGitHubTasks(batch, env);
-    }
+    await processGitHubTasks(batch, env);
   },
   
   // Handle scheduled events
@@ -73,9 +70,6 @@ export default {
       // Hourly jobs
       await refreshGithubStats(context);
       await refreshPackagistStats(context);
-    } else if (controller.cron === '*/5 * * * *') {
-      console.log('Starting Repository Issues 5-minute job');
-      // Every 5 minutes
       await refreshRepositoryIssues(context);
     }
   }

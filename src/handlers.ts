@@ -23,7 +23,7 @@ export const listRepositoryIssues = async (c: Context<{ Bindings: Env }>) => {
   const issues = await cacheService.getIssuesForRepository(plugin);
   
   if (!issues || issues.length === 0) {
-    return c.notFound();
+    return c.json([]);
   }
   
   return c.json(issues);
