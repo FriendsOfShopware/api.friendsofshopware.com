@@ -8,8 +8,7 @@ import {
   listRepositoryIssues,
   listPackages,
   githubIssueWebhook,
-  refreshGithubStats,
-  refreshRepositoryIssues,
+  refreshGithub,
   refreshPackagistStats
 } from './handlers';
 import { processGitHubTasks } from './queue';
@@ -51,7 +50,10 @@ export default {
   
   // Queue handler - must be declared as a function, not an object
   async queue(batch: MessageBatch<GitHubTaskMessage>, env: Env, ctx: ExecutionContext) {
-    await processGitHubTasks(batch, env);
+    // Get the queue name from the batch
+    if (batch.queue === 'github-tasks') {
+      await processGitHubTasks(batch, env);
+    }
   },
   
   // Handle scheduled events
@@ -67,10 +69,8 @@ export default {
     // Determine which refresh operation to perform based on cron schedule
     if (controller.cron === '0 * * * *') {
       console.log('Starting Github Stats hourly job');
-      // Hourly jobs
-      await refreshGithubStats(context);
+      await refreshGithub(context);
       await refreshPackagistStats(context);
-      await refreshRepositoryIssues(context);
     }
   }
 }; 

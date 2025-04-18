@@ -57,7 +57,7 @@ export const githubIssueWebhook = async (c: Context<{ Bindings: Env }>) => {
 };
 
 // Background refreshers
-export const refreshGithubStats = async (context: AppContext) => {
+export const refreshGithub = async (context: AppContext) => {
   console.log('Fetching repositories and queueing GitHub stats tasks');
   const githubService = new GitHubService(context);
   const cacheService = new CacheService(context.env);
@@ -84,6 +84,13 @@ export const refreshGithubStats = async (context: AppContext) => {
       repo: repo.name,
       timestamp: Date.now()
     } as GitHubTaskMessage);
+
+    await context.env.GITHUB_QUEUE.send({
+      type: 'fetch-repository-issues',
+      owner: repo.owner.login,
+      repo: repo.name,
+      timestamp: Date.now()
+    } as GitHubTaskMessage);
   }
   
   // Queue a task to process all contributor data after the individual tasks
@@ -100,25 +107,6 @@ export const refreshGithubStats = async (context: AppContext) => {
   } as GitHubTaskMessage);
   
   console.log('Queued GitHub stats tasks for all repositories');
-};
-
-export const refreshRepositoryIssues = async (context: AppContext) => {
-  console.log('Queueing Repository Issues refresh tasks');
-  const cacheService = new CacheService(context.env);
-  
-  const repos = await cacheService.getRepositories();
-  
-  // Queue issue fetching for each repository
-  for (const repo of repos) {
-    await context.env.GITHUB_QUEUE.send({
-      type: 'fetch-repository-issues',
-      owner: repo.owner.login,
-      repo: repo.name,
-      timestamp: Date.now()
-    } as GitHubTaskMessage);
-  }
-  
-  console.log('Queued Repository Issues tasks');
 };
 
 export const refreshPackagistStats = async (context: AppContext) => {
